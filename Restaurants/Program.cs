@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authorization;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using System.Text;
+using Restaurants.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,7 +44,14 @@ builder.Services.AddAuthentication(option =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationSettings.JwtKey)),
     };
 });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("HasNationality", builder => builder.RequireClaim("Nationality", "German", "Polish"));
+    options.AddPolicy("Atleast20", builder => builder.AddRequirements(new MinimumAgeRequirement(20)));
+});
 
+
+builder.Services.AddScoped<IAuthorizationHandler, MinimumAgeRequirementHandler>();
 builder.Services.AddControllers().AddFluentValidation();
 builder.Services.AddDbContext<RestaurantDbContext>();
 builder.Services.AddScoped<RestaurantSeeder>();
@@ -73,6 +81,8 @@ app.UseRouting();
 var scope = app.Services.CreateScope();
 var seeder = scope.ServiceProvider.GetRequiredService<RestaurantSeeder>();
 seeder.Seed();
+
+app.UseAuthorization();
 
 //app.UseAuthorization();
 
