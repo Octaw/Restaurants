@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -43,12 +44,14 @@ namespace Restaurants.Controllers
         [Authorize(Roles = "Admin,Manager")]
         public ActionResult CreateRestaurant([FromBody] CreateRestaurantDto dto)
         {
+            var userId = int.Parse(User.FindFirst(c => c.Type == ClaimTypes.NameIdentifier).Value);
             var id = _restaurantService.Create(dto);
             return Created($"/api/restaurant/{id}", null);
         }
 
         [HttpGet]
-        [Authorize(Policy = "Atleast20")] //musi się pokrywać z nazwą w program.cs, będzie to wymagało aby w tokenie JWT był claim nationality
+        //[Authorize(Policy = "Atleast20")] //musi się pokrywać z nazwą w program.cs, będzie to wymagało aby w tokenie JWT był claim nationality
+        [Authorize(Policy = "CreatedAtleast2Restaurants")]
         public ActionResult<IEnumerable<RestaurantDto>> GetAll()
         {
             var restaurantsDtos = _restaurantService.GetAll();
